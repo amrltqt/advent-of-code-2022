@@ -30,17 +30,14 @@ fn part2(input: &str) {
         // Each elves is associated to a sum
         .map(sum_elves_calories)
         .collect::<Vec<_>>();
-    
+
     calories_per_elf.sort();
 
     let mut reversed = calories_per_elf.iter().rev();
     println!(
         "Top 3 {}",
-        reversed.next().unwrap() +
-        reversed.next().unwrap() +
-        reversed.next().unwrap(),
+        reversed.next().unwrap() + reversed.next().unwrap() + reversed.next().unwrap(),
     );
-
 }
 
 fn main() {
