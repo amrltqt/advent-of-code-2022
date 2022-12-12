@@ -1,5 +1,5 @@
 use std::str;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Crate {
     item: char
 }
@@ -49,20 +49,20 @@ impl From<&str> for Move {
     }
 }
 
-fn parse_row(line: &str) -> Vec<Option<Crate>> {
-   line.to_string()
+fn parse_row(line: &str, base_size: usize) -> Vec<Option<Crate>> {
+    let mut row: Vec<Option<Crate>> = vec![None; base_size];
+    line.to_string()
         .as_bytes()
         .chunks(4)
         .map(str::from_utf8)
         .filter_map(|r| r.ok())
-        .map(|token| {
+        .enumerate()
+        .for_each(|(index, token)| {
             if token.starts_with("[") {
-                Some(Crate::from(token.trim()))
-            } else {
-                None
+                row.insert(index, Some(Crate::from(token.trim())))
             }
-        })
-        .collect::<Vec<Option<Crate>>>()
+        });
+    row
 }
 
 fn main() {
@@ -76,14 +76,20 @@ fn main() {
         .map(Move::from)
         .collect::<Vec<_>>();
 
-    let rows = raw_starter
-        .split("\n")
+    
+
+    let rows = raw_starter.split("\n").collect::<Vec<_>>();
+    let (raw_crates, raw_indexes) = rows.split_at(rows.len() - 1);
+
+    let base_size = raw_indexes.first().unwrap().len() / 4;
+
+    let crates = raw_crates.to_vec()
+        .into_iter()
         .filter(|line| !line.is_empty())
-        .map(parse_row)
+        .map(move |line| parse_row(line, base_size))
         .collect::<Vec<_>>();
 
-        println!("{:?}", moves);
-        println!("{:?}", rows);
+    println!("{:?}", crates);
 
 }
 
@@ -103,7 +109,7 @@ mod test {
     #[test]
     fn test_parse_row() {
         let raw = "        [C] [B] [H] ";
-        let row = parse_row(raw);
+        let row = parse_row(raw, 9);
 
         println!("{:?}", row);
     }
