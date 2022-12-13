@@ -59,11 +59,47 @@ fn parse_row(line: &str, base_size: usize) -> Vec<Option<Crate>> {
         .enumerate()
         .for_each(|(index, token)| {
             if token.starts_with("[") {
-                row.insert(index, Some(Crate::from(token.trim())))
+                row[index] = Some(Crate::from(token.trim()));
             }
         });
     row
 }
+
+fn transpose(rows: &mut Vec<Vec<Option<Crate>>>, nb_stacks: usize) -> Vec<Stack> {
+    
+    // reverse row to have the last item in the beginning of stacks
+    rows.reverse();
+
+    let mut stacks: Vec<Stack> = Vec::new();
+    for i in 0..nb_stacks {
+        let mut stack = Stack::new();
+        rows.iter().for_each(|row| {
+            if let Some(a_crate) = row[i].as_ref() {
+                stack.push(a_crate.clone());
+            }
+        });
+        stacks.push(stack);
+    }
+
+    stacks
+}
+
+fn parse_crates(raw_starter: &str) -> Vec<Stack> {
+    let rows = raw_starter.split("\n").collect::<Vec<_>>();
+    let (raw_crates, raw_indexes) = rows.split_at(rows.len() - 1);
+
+    let base_size = raw_indexes.first().unwrap().len() / 4 + 1;
+
+    let mut crates = raw_crates.to_vec()
+        .into_iter()
+        .filter(|line| !line.is_empty())
+        .map(move |line| parse_row(line, base_size))
+        .collect::<Vec<_>>();
+
+
+    transpose(&mut crates, base_size)
+}
+
 
 fn main() {
     let input = advent_of_code_2022::load_day("5");
@@ -76,27 +112,17 @@ fn main() {
         .map(Move::from)
         .collect::<Vec<_>>();
 
-    
+    let stacks = parse_crates(raw_moves);
 
-    let rows = raw_starter.split("\n").collect::<Vec<_>>();
-    let (raw_crates, raw_indexes) = rows.split_at(rows.len() - 1);
-
-    let base_size = raw_indexes.first().unwrap().len() / 4;
-
-    let crates = raw_crates.to_vec()
-        .into_iter()
-        .filter(|line| !line.is_empty())
-        .map(move |line| parse_row(line, base_size))
-        .collect::<Vec<_>>();
-
-    println!("{:?}", crates);
 
 }
 
 
+
+
 #[cfg(test)]
 mod test {
-    use crate::{Move, parse_row};
+    use crate::{Move, parse_row, parse_crates};
 
     #[test]
     fn test_parse_move() {
@@ -111,7 +137,27 @@ mod test {
         let raw = "        [C] [B] [H] ";
         let row = parse_row(raw, 9);
 
-        println!("{:?}", row);
+        assert_eq!(row.len(), 9);
+        assert_eq!(row[2].as_ref().unwrap().item, 'C');
+    }
+
+    #[test]
+    fn test_parse_stack() {
+        let input = r#"        [C] [B] [H]                
+[W]     [D] [J] [Q] [B]            
+[P] [F] [Z] [F] [B] [L]            
+[G] [Z] [N] [P] [J] [S] [V]        
+[Z] [C] [H] [Z] [G] [T] [Z]     [C]
+[V] [B] [M] [M] [C] [Q] [C] [G] [H]
+[S] [V] [L] [D] [F] [F] [G] [L] [F]
+[B] [J] [V] [L] [V] [G] [L] [N] [J]
+ 1   2   3   4   5   6   7   8   9 "#;
+        let stacks = parse_crates(input);
+
+        assert_eq!(stacks[0].len(), 7);
+        assert_eq!(stacks[1].len(), 6);
+
+        assert_eq!(stacks[8].len(), 4);
     }
 
 }
